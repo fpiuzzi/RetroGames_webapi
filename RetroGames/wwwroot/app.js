@@ -1,100 +1,110 @@
-let jwtToken = null;
+document.addEventListener("DOMContentLoaded", function () {
+    const loginContainer = document.getElementById("loginContainer");
+    const actionsContainer = document.getElementById("actionsContainer");
+    const gamesContainer = document.getElementById("gamesContainer");
+    const createGameContainer = document.getElementById("createGameContainer");
+    const loginForm = document.getElementById("loginForm");
+    const getGamesBtn = document.getElementById("getGamesBtn");
+    const showCreateGameBtn = document.getElementById("showCreateGameBtn");
+    const createGameForm = document.getElementById("createGameForm");
+    const gamesList = document.getElementById("gamesList");
+    const resultDiv = document.getElementById("result");
+    const gameResultDiv = document.getElementById("gameResult");
 
-document.getElementById('loginForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+    let token = null;
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const resultDiv = document.getElementById('result');
+    // Connexion utilisateur
+    loginForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const username = loginForm.username.value;
+        const password = loginForm.password.value;
 
-    resultDiv.textContent = "Connexion en cours...";
-
-    try {
-        const response = await fetch('/api/Auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': '*/*'
-            },
-            body: JSON.stringify({ username, password })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            jwtToken = data.token;
-
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('gamesContainer').style.display = 'block';
-
-            await loadGames();
-        } else if (response.status === 401) {
-            resultDiv.textContent = "Identifiants invalides.";
-            resultDiv.style.color = "red";
-        } else {
-            const error = await response.json();
-            resultDiv.textContent = "Erreur : " + (error.title || "Une erreur est survenue.");
-            resultDiv.style.color = "red";
-        }
-    } catch (err) {
-        resultDiv.textContent = "Erreur de connexion au serveur.";
-        resultDiv.style.color = "red";
-    }
-});
-
-async function loadGames() {
-    const gamesList = document.getElementById('gamesList');
-    gamesList.innerHTML = "Chargement...";
-    try {
-        const response = await fetch('/api/Games', {
-            headers: {
-                'Authorization': 'Bearer ' + jwtToken
-            }
-        });
-        if (response.ok) {
-            const games = await response.json();
-            gamesList.innerHTML = '';
-            games.forEach(game => {
-                const li = document.createElement('li');
-                li.textContent = game.name || game.title || JSON.stringify(game);
-                gamesList.appendChild(li);
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
             });
-        } else {
-            gamesList.textContent = "Impossible de récupérer la liste des jeux.";
+
+            if (response.ok) {
+                const data = await response.json();
+                token = data.token;
+                resultDiv.textContent = "Connexion réussie !";
+                loginContainer.style.display = "none";
+                actionsContainer.style.display = "block";
+            } else {
+                resultDiv.textContent = "Échec de la connexion.";
+            }
+        } catch (error) {
+            resultDiv.textContent = "Erreur serveur.";
         }
-    } catch {
-        gamesList.textContent = "Erreur de connexion à l'API.";
-    }
-}
+    });
 
-document.getElementById('createGameForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+    // Afficher la liste des jeux
+    getGamesBtn.addEventListener("click", async function () {
+        gamesList.innerHTML = "";
+        gamesContainer.style.display = "block";
+        createGameContainer.style.display = "none";
+        gameResultDiv.textContent = "";
 
-    const gameName = document.getElementById('gameName').value;
-    const gameResult = document.getElementById('gameResult');
-    gameResult.textContent = "Création en cours...";
-
-    try {
-        const response = await fetch('/api/Games', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + jwtToken
-            },
-            body: JSON.stringify({ name: gameName })
-        });
-
-        if (response.ok) {
-            gameResult.textContent = "Jeu créé avec succès !";
-            gameResult.style.color = "green";
-            document.getElementById('gameName').value = '';
-            await loadGames();
-        } else {
-            const error = await response.json();
-            gameResult.textContent = "Erreur : " + (error.title || "Impossible de créer le jeu.");
-            gameResult.style.color = "red";
+        try {
+            const response = await fetch("/api/games", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const games = await response.json();
+                if (games.length === 0) {
+                    gamesList.innerHTML = "<li>Aucun jeu trouve.</li>";
+                } else {
+                    games.forEach(game => {
+                        const li = document.createElement("li");
+                        li.textContent = `${game.title} (${game.genre}, ${game.platform}, ${new Date(game.releaseDate).toLocaleDateString()})`;
+                        gamesList.appendChild(li);
+                    });
+                }
+            } else {
+                gamesList.innerHTML = "<li>Erreur lors de la récupération des jeux.</li>";
+            }
+        } catch (error) {
+            gamesList.innerHTML = "<li>Erreur serveur.</li>";
         }
-    } catch {
-        gameResult.textContent = "Erreur de connexion à l'API.";
-        gameResult.style.color = "red";
-    }
+    });
+
+    // Afficher le formulaire de création de jeu
+    showCreateGameBtn.addEventListener("click", function () {
+        gamesContainer.style.display = "none";
+        createGameContainer.style.display = "block";
+        gameResultDiv.textContent = "";
+    });
+
+    // Création d'un nouveau jeu
+    createGameForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const game = {
+            title: createGameForm.gameName.value,
+            genre: createGameForm.gameGenre.value,
+            platform: createGameForm.gamePlatform.value,
+            releaseDate: createGameForm.gameReleaseDate.value
+        };
+
+        try {
+            const response = await fetch("/api/games", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(game)
+            });
+
+            if (response.ok) {
+                gameResultDiv.textContent = "Jeu créé avec succès !";
+                createGameForm.reset();
+            } else {
+                gameResultDiv.textContent = "Erreur lors de la création du jeu.";
+            }
+        } catch (error) {
+            gameResultDiv.textContent = "Erreur serveur.";
+        }
+    });
 });

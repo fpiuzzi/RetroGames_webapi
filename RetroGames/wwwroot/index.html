@@ -2,11 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="utf-8" />
-    <title>Authentification RetroGames</title>
+    <title>RetroGames - Gestion des jeux</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="loginContainer">
         <h2>Connexion</h2>
         <form id="loginForm">
             <label for="username">Nom d'utilisateur :</label>
@@ -19,6 +19,34 @@
         </form>
         <div id="result"></div>
     </div>
+
+    <div class="container" id="actionsContainer" style="display:none;">
+        <h2>Actions</h2>
+        <button id="getGamesBtn">Afficher la liste des jeux</button>
+        <button id="showCreateGameBtn">Créer un nouveau jeu</button>
+    </div>
+
+    <div class="container" id="gamesContainer" style="display:none;">
+        <h2>Liste des jeux</h2>
+        <ul id="gamesList"></ul>
+    </div>
+
+    <div class="container" id="createGameContainer" style="display:none;">
+        <h2>Créer un nouveau jeu</h2>
+        <form id="createGameForm">
+            <label for="gameName">Nom du jeu :</label>
+            <input type="text" id="gameName" name="gameName" required />
+            <label for="gameGenre">Genre :</label>
+            <input type="text" id="gameGenre" name="gameGenre" required />
+            <label for="gamePlatform">Plateforme :</label>
+            <input type="text" id="gamePlatform" name="gamePlatform" required />
+            <label for="gameReleaseDate">Date de sortie :</label>
+            <input type="date" id="gameReleaseDate" name="gameReleaseDate" required />
+            <button type="submit">Créer</button>
+        </form>
+        <div id="gameResult"></div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
