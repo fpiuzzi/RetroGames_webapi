@@ -17,6 +17,11 @@ namespace RetroGames.Controllers
         {
             _jwtKey = configuration["Jwt:Key"];
         }
+        /// <summary>
+        /// Pour récupérer le token d'un utilisateur
+        /// </summary>
+        /// <param name="login"></param>
+        /// <returns></returns>
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] UserLogin login)

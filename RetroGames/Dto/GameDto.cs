@@ -1,11 +1,20 @@
-﻿namespace RetroGames.Dto
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RetroGames.Dto
 {
     public class GameDto
     {
-        public long Id { get; internal set; }
-        public string Title { get; internal set; }
-        public string Genre { get; internal set; }
-        public string Platform { get; internal set; }
-        public DateTime ReleaseDate { get; internal set; }
+        public long Id { get; set; }
+
+        [Required]
+        public string Title { get; set; }
+
+        [Required]
+        public string Genre { get; set; }
+
+        [Required]
+        public string Platform { get; set; }
+
+        public DateTime ReleaseDate { get; set; }
     }
 }

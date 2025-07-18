@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RetroGames.Models;
+using RetroGames.Dto;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RetroGames.Controllers
 {
@@ -20,37 +20,73 @@ namespace RetroGames.Controllers
             _context = context;
         }
 
-        // GET: api/Games
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Game>>> GetGames()
+        // Mapping Game <-> GameDto
+        private static GameDto ToDto(Game game) => new GameDto
         {
-            return await _context.Games.ToListAsync();
+            Id = game.Id,
+            Title = game.Title,
+            Genre = game.Genre,
+            Platform = game.Platform,
+            ReleaseDate = game.ReleaseDate
+        };
+
+        private static void UpdateEntity(Game game, GameDto dto)
+        {
+            game.Title = dto.Title;
+            game.Genre = dto.Genre;
+            game.Platform = dto.Platform;
+            game.ReleaseDate = dto.ReleaseDate;
         }
 
-        // GET: api/Games/5
+        /// <summary>
+        /// Récupère la liste complète des jeux.
+        /// </summary>
+        /// <returns>Liste des jeux</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), 200)]
+        public async Task<ActionResult<IEnumerable<GameDto>>> GetGames()
+        {
+            var games = await _context.Games.ToListAsync();
+            return Ok(games.Select(ToDto));
+        }
+
+        /// <summary>
+        /// Récupère un jeu par son identifiant.
+        /// </summary>
+        /// <param name="id">Identifiant du jeu</param>
+        /// <returns>Le jeu demandé</returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Game>> GetGame(long id)
+        [ProducesResponseType(typeof(GameDto), 200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<GameDto>> GetGame(long id)
         {
             var game = await _context.Games.FindAsync(id);
-
             if (game == null)
-            {
                 return NotFound();
-            }
-
-            return game;
+            return Ok(ToDto(game));
         }
 
-        // PUT: api/Games/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Modifie un jeu existant.
+        /// </summary>
+        /// <param name="id">Identifiant du jeu</param>
+        /// <param name="gameDto">Données du jeu</param>
+        /// <returns>Message de succès ou d'erreur</returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGame(long id, Game game)
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> PutGame(long id, [FromBody] GameDto gameDto)
         {
-            if (id != game.Id)
-            {
-                return BadRequest();
-            }
+            if (id != gameDto.Id)
+                return BadRequest("L'identifiant de l'URL ne correspond pas à celui du jeu.");
 
+            var game = await _context.Games.FindAsync(id);
+            if (game == null)
+                return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
+
+            UpdateEntity(game, gameDto);
             _context.Entry(game).State = EntityState.Modified;
 
             try
@@ -60,43 +96,63 @@ namespace RetroGames.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!GameExists(id))
-                {
-                    return NotFound();
-                }
+                    return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
                 else
-                {
                     throw;
-                }
             }
 
-            return NoContent();
+            // Retourne la liste des jeux après modification
+            var games = await _context.Games.ToListAsync();
+            return Ok(games.Select(ToDto));
         }
 
-        // POST: api/Games
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Crée un nouveau jeu.
+        /// </summary>
+        /// <param name="gameDto">Données du jeu</param>
+        /// <returns>Message de succès</returns>
         [HttpPost]
-        public async Task<ActionResult<Game>> PostGame(Game game)
+        [Authorize]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> PostGame([FromBody] GameDto gameDto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var game = new Game
+            {
+                Title = gameDto.Title,
+                Genre = gameDto.Genre,
+                Platform = gameDto.Platform,
+                ReleaseDate = gameDto.ReleaseDate
+            };
+
             _context.Games.Add(game);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetGame", new { id = game.Id }, game);
+            return Content("Jeu créé avec succès !", "text/plain; charset=utf-8");
         }
 
-        // DELETE: api/Games/5
+        /// <summary>
+        /// Supprime un jeu par son identifiant.
+        /// </summary>
+        /// <param name="id">Identifiant du jeu</param>
+        /// <returns>Message de succès ou d'erreur</returns>
         [HttpDelete("{id}")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteGame(long id)
         {
             var game = await _context.Games.FindAsync(id);
             if (game == null)
-            {
-                return NotFound();
-            }
+                return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
 
             _context.Games.Remove(game);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Content("Jeu supprimé avec succès !", "text/plain; charset=utf-8");
         }
 
         private bool GameExists(long id)
