@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,12 +18,21 @@ namespace RetroGames.Controllers
             _jwtKey = configuration["Jwt:Key"];
         }
         /// <summary>
-        /// Pour r�cup�rer le token d'un utilisateur
+        /// Authentifie un utilisateur et retourne un token JWT.
         /// </summary>
-        /// <param name="login"></param>
-        /// <returns></returns>
-
+        /// <remarks>
+        /// Exemple de requête :
+        /// 
+        ///     {
+        ///         "username": "test",
+        ///         "password": "test123"
+        ///     }
+        /// </remarks>
+        /// <param name="login">Identifiants de connexion</param>
+        /// <returns>Token JWT si authentification réussie</returns>
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(object))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Login([FromBody] UserLogin login)
         {
             var testUser = new UserModel

@@ -20,7 +20,6 @@ namespace RetroGames.Controllers
             _context = context;
         }
 
-        // Mapping Game <-> GameDto
         private static GameDto ToDto(Game game) => new GameDto
         {
             Id = game.Id,
@@ -35,7 +34,8 @@ namespace RetroGames.Controllers
             game.Title = dto.Title;
             game.Genre = dto.Genre;
             game.Platform = dto.Platform;
-            game.ReleaseDate = dto.ReleaseDate;
+            if (dto.ReleaseDate.HasValue)
+                game.ReleaseDate = dto.ReleaseDate.Value;
         }
 
         /// <summary>
@@ -67,6 +67,39 @@ namespace RetroGames.Controllers
         }
 
         /// <summary>
+        /// Filtre les jeux par plateforme, genre ou date de sortie.
+        /// </summary>
+        /// <remarks>
+        /// Exemple d'appel :
+        ///     GET /api/games/filter?platform=NES&genre=Plateforme&releaseDate=1985-09-13
+        /// </remarks>
+        /// <param name="platform">Plateforme du jeu (optionnel)</param>
+        /// <param name="genre">Genre du jeu (optionnel)</param>
+        /// <param name="releaseDate">Date de sortie du jeu (optionnel)</param>
+        /// <returns>Liste filtrée des jeux</returns>
+        [HttpGet("filter")]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), 200)]
+        public async Task<ActionResult<IEnumerable<GameDto>>> FilterGames(
+            [FromQuery] string? platform,
+            [FromQuery] string? genre,
+            [FromQuery] DateTime? releaseDate)
+        {
+            var query = _context.Games.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(platform))
+                query = query.Where(g => g.Platform == platform);
+
+            if (!string.IsNullOrWhiteSpace(genre))
+                query = query.Where(g => g.Genre == genre);
+
+            if (releaseDate.HasValue)
+                query = query.Where(g => g.ReleaseDate.HasValue && g.ReleaseDate.Value.Date == releaseDate.Value.Date);
+
+            var result = await query.ToListAsync();
+            return Ok(result.Select(ToDto));
+        }
+
+        /// <summary>
         /// Modifie un jeu existant.
         /// </summary>
         /// <param name="id">Identifiant du jeu</param>
@@ -84,7 +117,7 @@ namespace RetroGames.Controllers
 
             var game = await _context.Games.FindAsync(id);
             if (game == null)
-                return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
+                return NotFound("Jeu non trouvé.");
 
             UpdateEntity(game, gameDto);
             _context.Entry(game).State = EntityState.Modified;
@@ -96,42 +129,45 @@ namespace RetroGames.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!GameExists(id))
-                    return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
+                    return NotFound("Jeu non trouvé.");
                 else
                     throw;
             }
 
-            // Retourne la liste des jeux après modification
-            var games = await _context.Games.ToListAsync();
-            return Ok(games.Select(ToDto));
+            return Ok(ToDto(game));
         }
 
         /// <summary>
-        /// Crée un nouveau jeu.
+        /// Crée un nouveau jeu. La date de sortie est optionnelle : si elle n'est pas renseignée, le champ restera vide.
         /// </summary>
-        /// <param name="gameDto">Données du jeu</param>
-        /// <returns>Message de succès</returns>
+        /// <remarks>
+        /// Exemple de requête :
+        /// 
+        ///     {
+        ///         "title": "Super Mario Bros",
+        ///         "genre": "Plateforme",
+        ///         "platform": "NES",
+        ///         "releaseDate": "1985-09-13T00:00:00"
+        ///     }
+        /// La propriété "releaseDate" peut être omise ou laissée vide.
+        /// </remarks>
+        /// <param name="gameDto">Jeu à ajouter</param>
+        /// <returns>Le jeu créé</returns>
         [HttpPost]
-        [Authorize]
-        [ProducesResponseType(201)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> PostGame([FromBody] GameDto gameDto)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(GameDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<GameDto>> PostGame([FromBody] GameDto gameDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var game = new Game
-            {
-                Title = gameDto.Title,
-                Genre = gameDto.Genre,
-                Platform = gameDto.Platform,
-                ReleaseDate = gameDto.ReleaseDate
-            };
+            var game = new Game();
+            UpdateEntity(game, gameDto);
 
             _context.Games.Add(game);
             await _context.SaveChangesAsync();
 
-            return Content("Jeu créé avec succès !", "text/plain; charset=utf-8");
+            return CreatedAtAction(nameof(GetGame), new { id = game.Id }, ToDto(game));
         }
 
         /// <summary>
@@ -147,12 +183,12 @@ namespace RetroGames.Controllers
         {
             var game = await _context.Games.FindAsync(id);
             if (game == null)
-                return Content("Jeu non trouvé.", "text/plain; charset=utf-8");
+                return NotFound("Jeu non trouvé.");
 
             _context.Games.Remove(game);
             await _context.SaveChangesAsync();
 
-            return Content("Jeu supprimé avec succès !", "text/plain; charset=utf-8");
+            return Ok("Jeu supprimé avec succès !");
         }
 
         private bool GameExists(long id)

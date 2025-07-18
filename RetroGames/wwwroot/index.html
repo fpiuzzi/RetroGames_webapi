@@ -24,6 +24,7 @@
         <h2>Actions</h2>
         <button id="getGamesBtn">Afficher la liste des jeux</button>
         <button id="showCreateGameBtn">Créer un nouveau jeu</button>
+        <div id="filterButtons"></div>
     </div>
 
     <div class="container" id="gamesContainer" style="display:none;">
@@ -40,8 +41,8 @@
             <input type="text" id="gameGenre" name="gameGenre" required />
             <label for="gamePlatform">Plateforme :</label>
             <input type="text" id="gamePlatform" name="gamePlatform" required />
-            <label for="gameReleaseDate">Date de sortie :</label>
-            <input type="date" id="gameReleaseDate" name="gameReleaseDate" required />
+            <label for="gameReleaseDate">Date de sortie (optionnelle):</label>
+            <input type="date" id="gameReleaseDate" name="gameReleaseDate" />
             <button type="submit">Créer</button>
         </form>
         <div id="gameResult"></div>
