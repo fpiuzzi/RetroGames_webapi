@@ -1,0 +1,6 @@
+@RetroGames_HostAddress = http://localhost:5292
+
+GET {{RetroGames_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
