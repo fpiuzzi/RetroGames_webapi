@@ -154,6 +154,7 @@ namespace RetroGames.Controllers
         /// <param name="gameDto">Jeu à ajouter</param>
         /// <returns>Le jeu créé</returns>
         [HttpPost]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(GameDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<GameDto>> PostGame([FromBody] GameDto gameDto)

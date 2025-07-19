@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Fichier de configuration local ignoré
+RetroGames/appsettings.Local.json

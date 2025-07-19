@@ -1,20 +1,20 @@
-# RetroGames
+Ôªø# RetroGames
 
-RetroGames est une application web permettant de gÈrer une collection de jeux vidÈo. Elle repose sur une API REST dÈveloppÈe en .NET 8 et une interface utilisateur en JavaScript.
+RetroGames est une application web permettant de g√©rer une collection de jeux vid√©o. Elle repose sur une API REST d√©velopp√©e en .NET 8 et une interface utilisateur en JavaScript.
 
-## FonctionnalitÈs
+## Fonctionnalit√©s
 
 - Authentification utilisateur (JWT)
-- Consultation, crÈation, modification et suppression de jeux
+- Consultation, cr√©ation, modification et suppression de jeux
 - Interface web simple et intuitive
-- Gestion des erreurs et des messages cÙtÈ client
+- Gestion des erreurs et des messages c√¥t√© client
 
-## PrÈrequis
+## Pr√©requis
 
 - .NET 8 SDK
 - Visual Studio
 - Un navigateur web 
-- Persistance des donnÈes : Base InMemory
+- Persistance des donn√©es : Base InMemory
 
 ## Installation
 
@@ -24,11 +24,25 @@ RetroGames est une application web permettant de gÈrer une collection de jeux vi
 
 https://localhost:<port>/index.html
 
-## Pour accÈder ‡ la docummentation Swagger 
+## Pour acc√©der √† la docummentation Swagger 
 
 https://localhost:<port>/swagger
 
 ## Identifiants de connexion (test)
 
-- **Nom díutilisateur : **test
+- **Nom d‚Äôutilisateur : **test
 - **Mot de passe : **test123
+
+## Configuration du secret JWT
+
+Pour des raisons de s√©curit√©, la cl√© secr√®te utilis√©e pour signer les tokens JWT n‚Äôest pas pr√©sente dans le fichier `appsettings.json` .
+
+Avant de lancer l‚Äôapplication, cr√©ez un fichier `appsettings.Local.json` √† la racine du projet avec le contenu suivant‚ÄØ:
+
+```json
+  "Jwt": {
+    "Key": "votre token",
+    "Issuer": "http://localhost:<port>",
+    "Audience": "http://localhost:<port>"
+  }
+```

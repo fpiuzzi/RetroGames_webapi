@@ -17,6 +17,7 @@ namespace RetroGames.Controllers
         {
             _jwtKey = configuration["Jwt:Key"];
         }
+
         /// <summary>
         /// Authentifie un utilisateur et retourne un token JWT.
         /// </summary>
@@ -35,13 +36,16 @@ namespace RetroGames.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Login([FromBody] UserLogin login)
         {
+            // Mot de passe hashé pour le compte test
             var testUser = new UserModel
             {
                 Username = "test",
-                Password = "test123"
+                PasswordHash = PasswordHelper.HashPassword("test123")
             };
 
-            if (login.Username == testUser.Username && login.Password == testUser.Password)
+            // Vérification du mot de passe
+            if (login.Username == testUser.Username &&
+                PasswordHelper.VerifyPassword(login.Password, testUser.PasswordHash))
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var key = Encoding.UTF8.GetBytes(_jwtKey);
