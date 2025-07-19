@@ -192,6 +192,28 @@ namespace RetroGames.Controllers
             return Ok("Jeu supprimé avec succès !");
         }
 
+        /// <summary>
+        /// Recherche des jeux par titre.
+        /// </summary>
+        /// <param name="title">Titre du jeu à rechercher</param>
+        /// <returns>Liste des jeux correspondant à la recherche</returns>
+        /// <remarks>
+        /// Cette méthode effectue une recherche floue sur le titre des jeux.
+        /// </remarks>
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(IEnumerable<GameDto>), 200)]
+        public async Task<ActionResult<IEnumerable<GameDto>>> SearchGames([FromQuery] string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return BadRequest("Le paramètre 'title' est requis.");
+
+            var games = await _context.Games
+                .Where(g => g.Title.ToLower().Contains(title.ToLower()))
+                .ToListAsync();
+
+            return Ok(games.Select(ToDto));
+        }
+
         private bool GameExists(long id)
         {
             return _context.Games.Any(e => e.Id == id);

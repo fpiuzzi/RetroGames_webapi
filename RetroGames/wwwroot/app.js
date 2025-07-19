@@ -36,6 +36,78 @@ document.getElementById("showCreateGameBtn").addEventListener("click", function 
     document.getElementById("gameResult").textContent = "";
 });
 
+// Ouvre la modal de recherche
+document.getElementById("showSearchBarBtn").addEventListener("click", function () {
+    document.getElementById("searchModal").style.display = "flex";
+    document.getElementById("searchTitle").value = "";
+    document.getElementById("searchResultMsg").textContent = "";
+    document.getElementById("searchTitle").focus();
+});
+
+// Ferme la modal de recherche
+document.getElementById("closeSearchModal").addEventListener("click", function () {
+    document.getElementById("searchModal").style.display = "none";
+});
+
+// Fermer la modal avec la touche Echap
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+        document.getElementById("searchModal").style.display = "none";
+    }
+});
+
+// Recherche de jeu
+document.getElementById('searchGameBtn').addEventListener('click', async function () {
+    const title = document.getElementById('searchTitle').value;
+    const resultMsg = document.getElementById('searchResultMsg');
+    resultMsg.textContent = "";
+    if (!title.trim()) {
+        resultMsg.textContent = "Veuillez entrer un nom de jeu.";
+        return;
+    }
+    const response = await fetch(`/api/games/search?title=${encodeURIComponent(title)}`);
+    if (response.ok) {
+        const games = await response.json();
+        const gamesList = document.getElementById('gamesList');
+        gamesList.innerHTML = '';
+        if (games.length === 0) {
+            gamesList.innerHTML = '<li>Aucun jeu trouvé.</li>';
+            resultMsg.textContent = "Aucun jeu trouvé.";
+        } else {
+            games.forEach(game => {
+                const li = document.createElement('li');
+                let dateStr = "";
+                if (game.releaseDate) {
+                    dateStr = new Date(game.releaseDate).toLocaleDateString();
+                }
+                li.textContent = `${game.title} | ${game.genre} | ${game.platform} | ${dateStr}`;
+                // Bouton Modifier
+                const editBtn = document.createElement("button");
+                editBtn.textContent = "Modifier";
+                editBtn.style.backgroundColor = "orange";
+                editBtn.style.color = "white";
+                editBtn.style.marginLeft = "10px";
+                editBtn.onclick = () => showEditForm(game);
+                // Bouton Supprimer
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Supprimer";
+                deleteBtn.style.backgroundColor = "red";
+                deleteBtn.style.color = "white";
+                deleteBtn.style.marginLeft = "5px";
+                deleteBtn.onclick = () => deleteGame(game.id);
+                li.appendChild(editBtn);
+                li.appendChild(deleteBtn);
+                gamesList.appendChild(li);
+            });
+            resultMsg.textContent = `${games.length} jeu(x) trouvé(s).`;
+        }
+        document.getElementById('gamesContainer').style.display = 'block';
+        document.getElementById("searchModal").style.display = "none";
+    } else {
+        resultMsg.textContent = "Erreur serveur lors de la recherche.";
+    }
+});
+
 document.getElementById("createGameForm").addEventListener("submit", async function (e) {
     e.preventDefault();
     const title = document.getElementById("gameName").value;
